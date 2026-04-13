@@ -8,30 +8,40 @@ const makeDefault = () => ({
   streak: 0,
   lastStudyDate: null,
   conceptsMastered: 0,
-  totalMinutes: 0,
   subjectCounts: Object.fromEntries(SUBJECT_NAMES.map((s) => [s, 0])),
   recentActivity: [],
 });
 
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return makeDefault();
+    return { ...makeDefault(), ...JSON.parse(saved) };
+  } catch {
+    return makeDefault();
+  }
+}
+
+function saveToStorage(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    console.warn("Could not save progress to localStorage");
+  }
+}
+
 export function useProgress() {
-  const [progress, setProgress] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? { ...makeDefault(), ...JSON.parse(saved) } : makeDefault();
-    } catch {
-      return makeDefault();
-    }
-  });
+  const [progress, setProgress] = useState(loadFromStorage);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    saveToStorage(progress);
   }, [progress]);
 
   function logQuestion(subject, topic = null) {
     const today = new Date().toDateString();
     setProgress((prev) => {
       const isNewDay = prev.lastStudyDate !== today;
-      return {
+      const next = {
         ...prev,
         totalQuestions: prev.totalQuestions + 1,
         streak: isNewDay ? prev.streak + 1 : prev.streak,
@@ -50,6 +60,8 @@ export function useProgress() {
           ...prev.recentActivity,
         ].slice(0, 20),
       };
+      saveToStorage(next);
+      return next;
     });
   }
 
@@ -60,22 +72,26 @@ export function useProgress() {
       if (idx === -1) return prev;
       activity[idx] = {
         ...activity[idx],
-        hintsUsed: activity[idx].hintsUsed + 1,
+        hintsUsed: (activity[idx].hintsUsed || 0) + 1,
       };
-      return { ...prev, recentActivity: activity };
+      const next = { ...prev, recentActivity: activity };
+      saveToStorage(next);
+      return next;
     });
   }
 
   function markConceptMastered() {
-    setProgress((prev) => ({
-      ...prev,
-      conceptsMastered: prev.conceptsMastered + 1,
-    }));
+    setProgress((prev) => {
+      const next = { ...prev, conceptsMastered: prev.conceptsMastered + 1 };
+      saveToStorage(next);
+      return next;
+    });
   }
 
   function resetProgress() {
+    const fresh = makeDefault();
     localStorage.removeItem(STORAGE_KEY);
-    setProgress(makeDefault());
+    setProgress(fresh);
   }
 
   return {

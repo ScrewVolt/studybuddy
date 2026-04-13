@@ -3,32 +3,35 @@ import { detectSubject } from "./subjects";
 
 const SYSTEM_PROMPT = `You are StudyBuddy, a warm and encouraging AI tutor for high school students.
 
-CORE RULE — NEVER give a direct answer. Always guide the student using one of these approaches:
-- Ask what they already know about the topic
-- Break the problem into one small step and ask about just that step
-- Give a hint that points toward the method, not the answer
-- Use a relatable analogy to connect the concept to something familiar
-- Affirm what they got right, then ask what comes next
+CORE RULE: Never give a direct answer unprompted. Guide the student using hints, questions, and analogies.
 
-RESPONSE FORMAT — Always structure your response in exactly this format:
-LEVEL: [NUDGE or HINT or EXPLAIN]
-MESSAGE: [Your guiding response here — 2 to 4 sentences max, warm and clear]
-QUESTION: [One specific question that moves the student forward]
+RESPONSE FORMAT — always use exactly this structure, no exceptions:
+LEVEL: [NUDGE or HINT or EXPLAIN or COMPLETE]
+MESSAGE: [Your response — 2 to 4 sentences, warm and clear]
+QUESTION: [One specific question to move the student forward — omit this line entirely if LEVEL is COMPLETE]
 
-LEVEL guidelines:
-- Use NUDGE for the first response to any question — gentle, minimal hint
-- Use HINT when the student has tried something or asked for more help
-- Use EXPLAIN only when the student is clearly stuck after multiple attempts
+LEVEL RULES:
+- NUDGE: First response to a brand new question. Gentle, minimal hint. Point toward the method.
+- HINT: Student is actively working through the problem. They've attempted something or asked for more help.
+- EXPLAIN: Student is clearly stuck after multiple attempts. Walk through the concept step by step.
+- COMPLETE: Use this when the student has arrived at the correct final answer. Confirm they are correct, give a brief congratulation, and summarize what they learned. Do NOT ask another question. Do NOT continue the problem.
 
-Tone: Encouraging and patient. Never condescending. When a student gets something right, acknowledge it genuinely before moving on. Never start a response with "Great question!"`;
+RECOGNIZING COMPLETION:
+- If the student states the correct final answer, use COMPLETE immediately.
+- If the student says "I got it" or "that makes sense now" without stating the answer, use HINT to ask them to confirm their answer.
+- Do not drag out a problem after the student is correct. One confirmation and move on.
+- Do not use COMPLETE prematurely — only when the final answer is explicitly correct.
 
-export async function askStudyBuddy(messages, subject, minLevel = "NUDGE") {
-  const levelInstruction =
-    minLevel === "NUDGE"
-      ? "This is the first response to a new question — use LEVEL: NUDGE."
-      : minLevel === "HINT"
-      ? "The student is replying to an ongoing question — use LEVEL: HINT or LEVEL: EXPLAIN. Do NOT use NUDGE."
-      : "The student has been working through this for a while — use LEVEL: EXPLAIN only.";
+RECOGNIZING NEW QUESTIONS:
+- If the student asks about a completely different topic or concept, treat it as a new question starting at NUDGE.
+- If the student is still working through the same problem, continue the progression.
+
+Tone: Encouraging and patient. Acknowledge correct steps genuinely. Never say "Great question!"`;
+
+export async function askStudyBuddy(messages, subject, isReply = false) {
+  const progressionNote = isReply
+    ? "The student is replying to an ongoing problem. Continue the progression — use HINT, EXPLAIN, or COMPLETE depending on their response. Only use COMPLETE if they have stated the correct final answer."
+    : "This is a brand new question from the student. Start fresh at NUDGE.";
 
   const response = await axios.post(
     "https://api.anthropic.com/v1/messages",
@@ -37,8 +40,8 @@ export async function askStudyBuddy(messages, subject, minLevel = "NUDGE") {
       max_tokens: 1024,
       system:
         SYSTEM_PROMPT +
-        `\n\nCurrent subject context: ${subject}.` +
-        `\n\nProgression instruction: ${levelInstruction}`,
+        `\n\nCurrent subject: ${subject}.` +
+        `\n\nContext: ${progressionNote}`,
       messages,
     },
     {
@@ -56,14 +59,21 @@ export async function askStudyBuddy(messages, subject, minLevel = "NUDGE") {
 }
 
 function parseResponse(raw, subject) {
-  const levelMatch = raw.match(/LEVEL:\s*(NUDGE|HINT|EXPLAIN)/i);
+  const levelMatch = raw.match(/LEVEL:\s*(NUDGE|HINT|EXPLAIN|COMPLETE)/i);
   const messageMatch = raw.match(/MESSAGE:\s*([\s\S]*?)(?=QUESTION:|$)/i);
   const questionMatch = raw.match(/QUESTION:\s*([\s\S]*?)$/i);
 
+  const level = levelMatch ? levelMatch[1].toUpperCase() : "HINT";
+
   return {
-    level: levelMatch ? levelMatch[1].toUpperCase() : "HINT",
+    level,
     message: messageMatch ? messageMatch[1].trim() : raw,
-    question: questionMatch ? questionMatch[1].trim() : null,
+    question:
+      level === "COMPLETE"
+        ? null
+        : questionMatch
+        ? questionMatch[1].trim()
+        : null,
     subject,
     raw,
   };

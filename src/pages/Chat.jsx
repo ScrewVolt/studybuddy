@@ -19,7 +19,9 @@ export default function Chat() {
   const [loading, setLoading] = useState(false)
   const [currentSubject, setCurrentSubject] = useState(initialSubject)
   const [sessionQuestions, setSessionQuestions] = useState(0)
-  const [hintLevel, setHintLevel] = useState('NUDGE')
+
+  // Tracks whether we are mid-question or ready for a new one
+  const [questionActive, setQuestionActive] = useState(false)
 
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
@@ -28,7 +30,7 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
-  async function handleSend(overrideText, isReply = false) {
+  async function handleSend(overrideText, forceReply = false) {
     const text = (overrideText !== undefined ? overrideText : input).trim()
     if (!text || loading) return
 
@@ -36,16 +38,9 @@ export default function Chat() {
     const subject = currentSubject || detected
     if (!currentSubject) setCurrentSubject(detected)
 
-    // Determine the minimum hint level for this send
-    // New questions from bottom input always reset to NUDGE
-    // Inline replies advance the level — never go backward
-    const nextLevel = isReply
-      ? hintLevel === 'NUDGE'
-        ? 'HINT'
-        : hintLevel === 'HINT'
-          ? 'HINT'
-          : 'EXPLAIN'
-      : 'NUDGE'
+    // A message is a reply if we're mid-question AND it's not a new question
+    // forceReply overrides this for hint/explain button clicks
+    const isReply = forceReply || questionActive
 
     const userMsg = {
       id: `u-${Date.now()}`,
@@ -57,9 +52,14 @@ export default function Chat() {
     setMessages(updatedMessages)
     setInput('')
     setLoading(true)
+
+    // Only log and count brand new questions
     if (!isReply) {
       setSessionQuestions(prev => prev + 1)
       logQuestion(subject, text.slice(0, 60))
+      setQuestionActive(true)
+    } else {
+      incrementHints(subject)
     }
 
     try {
@@ -67,9 +67,14 @@ export default function Chat() {
         role: m.role,
         content: m.content,
       }))
-      const parsed = await askStudyBuddy(apiHistory, subject, nextLevel)
+      const parsed = await askStudyBuddy(apiHistory, subject, isReply)
 
-      setHintLevel(parsed.level)
+      // If the AI says COMPLETE, close out the question
+      if (parsed.level === 'COMPLETE') {
+        setQuestionActive(false)
+        markConceptMastered()
+      }
+
       setMessages(prev => [
         ...prev,
         {
@@ -90,7 +95,7 @@ export default function Chat() {
           parsed: {
             level: 'HINT',
             message:
-              'Something went wrong connecting to StudyBuddy. Please check your API key and internet connection.',
+              'Something went wrong connecting to StudyBuddy. Check your API key and internet connection.',
             question: null,
             subject,
           },
@@ -105,6 +110,7 @@ export default function Chat() {
   function handleHintAction(action) {
     if (action === 'mastered') {
       markConceptMastered()
+      setQuestionActive(false)
       return
     }
     const prompts = {
@@ -112,7 +118,6 @@ export default function Chat() {
       explain: 'Can you walk me through this step by step?',
     }
     if (prompts[action]) {
-      incrementHints(currentSubject)
       handleSend(prompts[action], true)
     }
   }
@@ -124,12 +129,11 @@ export default function Chat() {
       className="h-screen flex overflow-hidden"
       style={{ backgroundColor: '#F8F7F4' }}
     >
-      {/* ── Sidebar ── */}
+      {/* Sidebar */}
       <div
         className="w-56 flex-shrink-0 bg-white flex flex-col overflow-hidden"
         style={{ borderRight: '0.5px solid #e5e7eb' }}
       >
-        {/* Logo */}
         <div
           className="p-4 flex items-center gap-2.5"
           style={{ borderBottom: '0.5px solid #f3f4f6' }}
@@ -140,14 +144,10 @@ export default function Chat() {
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <circle cx="8" cy="6.5" r="4" fill="white" opacity="0.9" />
-              <rect
-                x="6.5" y="9.5" width="3" height="1.2" rx="0.6"
-                fill="white" opacity="0.6"
-              />
-              <rect
-                x="7" y="11" width="2" height="1.2" rx="0.6"
-                fill="white" opacity="0.4"
-              />
+              <rect x="6.5" y="9.5" width="3" height="1.2" rx="0.6"
+                fill="white" opacity="0.6" />
+              <rect x="7" y="11" width="2" height="1.2" rx="0.6"
+                fill="white" opacity="0.4" />
             </svg>
           </div>
           <div>
@@ -158,7 +158,6 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Subject switcher */}
         <div className="p-3 flex-1">
           <div className="text-[10px] font-medium uppercase tracking-widest text-gray-400 px-2 mb-2">
             Subjects
@@ -169,7 +168,10 @@ export default function Chat() {
             return (
               <button
                 key={subject}
-                onClick={() => setCurrentSubject(subject)}
+                onClick={() => {
+                  setCurrentSubject(subject)
+                  setQuestionActive(false)
+                }}
                 className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-colors mb-0.5"
                 style={{
                   backgroundColor: isActive ? config.lightColor : 'transparent',
@@ -188,11 +190,7 @@ export default function Chat() {
           })}
         </div>
 
-        {/* Session stats */}
-        <div
-          className="p-4"
-          style={{ borderTop: '0.5px solid #f3f4f6' }}
-        >
+        <div className="p-4" style={{ borderTop: '0.5px solid #f3f4f6' }}>
           <div className="text-[10px] font-medium uppercase tracking-widest text-gray-400 mb-2">
             This session
           </div>
@@ -202,13 +200,23 @@ export default function Chat() {
               {sessionQuestions}
             </span>
           </div>
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-1.5">
             <span className="text-[12px] text-gray-500">Concepts mastered</span>
-            <span
-              className="text-[12px] font-medium"
-              style={{ color: '#059669' }}
-            >
+            <span className="text-[12px] font-medium" style={{ color: '#059669' }}>
               {progress.conceptsMastered}
+            </span>
+          </div>
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-[12px] text-gray-500">Status</span>
+            <span
+              className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+              style={
+                questionActive
+                  ? { backgroundColor: '#EEF2FF', color: '#4338CA' }
+                  : { backgroundColor: '#F3F4F6', color: '#9CA3AF' }
+              }
+            >
+              {questionActive ? 'In progress' : 'Ready'}
             </span>
           </div>
           <button
@@ -216,23 +224,16 @@ export default function Chat() {
             className="w-full py-1.5 text-[12px] text-gray-400 hover:text-gray-600 transition-colors text-left flex items-center gap-1.5"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <path
-                d="M8 2L4 6L8 10"
-                stroke="currentColor"
-                strokeWidth="1.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              <path d="M8 2L4 6L8 10" stroke="currentColor" strokeWidth="1.2"
+                strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Back to dashboard
           </button>
         </div>
       </div>
 
-      {/* ── Main chat area ── */}
+      {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
-
-        {/* Chat header */}
         <div
           className="bg-white flex items-center justify-between px-5 py-3 flex-shrink-0"
           style={{ borderBottom: '0.5px solid #e5e7eb' }}
@@ -245,10 +246,12 @@ export default function Chat() {
                 color: subjectConfig.color,
               }}
             >
-              {currentSubject || 'Detecting subject...'}
+              {currentSubject || 'Ask anything'}
             </div>
             <div className="text-[12px] text-gray-400">
-              Ask anything — StudyBuddy will guide you
+              {questionActive
+                ? 'Working through a problem...'
+                : 'Ask anything — StudyBuddy will guide you'}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -257,9 +260,7 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
-
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center py-20">
               <div
@@ -268,14 +269,10 @@ export default function Chat() {
               >
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
                   <circle cx="14" cy="11" r="7" fill="#4338CA" opacity="0.9" />
-                  <rect
-                    x="11" y="17" width="6" height="2" rx="1"
-                    fill="#4338CA" opacity="0.6"
-                  />
-                  <rect
-                    x="12" y="20" width="4" height="2" rx="1"
-                    fill="#4338CA" opacity="0.4"
-                  />
+                  <rect x="11" y="17" width="6" height="2" rx="1"
+                    fill="#4338CA" opacity="0.6" />
+                  <rect x="12" y="20" width="4" height="2" rx="1"
+                    fill="#4338CA" opacity="0.4" />
                 </svg>
               </div>
               <div className="text-[15px] font-medium text-gray-700 mb-1.5">
@@ -283,11 +280,8 @@ export default function Chat() {
               </div>
               <div className="text-[13px] text-gray-400 max-w-xs leading-relaxed">
                 Ask any question about{' '}
-                {currentSubject
-                  ? currentSubject.toLowerCase()
-                  : 'any subject'}
-                . StudyBuddy will guide you through it — never just give you
-                the answer.
+                {currentSubject ? currentSubject.toLowerCase() : 'any subject'}.
+                StudyBuddy will guide you — never just give you the answer.
               </div>
             </div>
           )}
@@ -304,10 +298,8 @@ export default function Chat() {
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <circle cx="6" cy="5" r="3" fill="white" opacity="0.9" />
-                      <rect
-                        x="4.5" y="7.5" width="3" height="1" rx="0.5"
-                        fill="white" opacity="0.6"
-                      />
+                      <rect x="4.5" y="7.5" width="3" height="1" rx="0.5"
+                        fill="white" opacity="0.6" />
                     </svg>
                   </div>
                   <HintCard
@@ -328,10 +320,8 @@ export default function Chat() {
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <circle cx="6" cy="5" r="3" fill="white" opacity="0.9" />
-                  <rect
-                    x="4.5" y="7.5" width="3" height="1" rx="0.5"
-                    fill="white" opacity="0.6"
-                  />
+                  <rect x="4.5" y="7.5" width="3" height="1" rx="0.5"
+                    fill="white" opacity="0.6" />
                 </svg>
               </div>
               <div
@@ -370,7 +360,11 @@ export default function Chat() {
               onKeyDown={e =>
                 e.key === 'Enter' && !e.shiftKey && handleSend()
               }
-              placeholder="Ask a question about anything you're studying..."
+              placeholder={
+                questionActive
+                  ? 'Ask a follow-up or start a new question...'
+                  : 'Ask a question about anything you\'re studying...'
+              }
               className="flex-1 px-4 py-2.5 rounded-2xl text-[13px] text-gray-800 outline-none transition-colors"
               style={{
                 backgroundColor: '#F8F7F4',
@@ -394,7 +388,6 @@ export default function Chat() {
             StudyBuddy guides you — not gives you the answer
           </div>
         </div>
-
       </div>
     </div>
   )
