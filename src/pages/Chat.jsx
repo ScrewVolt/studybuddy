@@ -77,11 +77,11 @@ export default function Chat() {
 
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
 
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
-  // Save session under the current subject's key
   useEffect(() => {
     if (!currentSubject) return
     try {
@@ -96,7 +96,6 @@ export default function Chat() {
     }
   }, [messages, currentSubject, sessionQuestions, questionActive])
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
@@ -109,8 +108,6 @@ export default function Chat() {
     const subject = currentSubject || detected
     if (!currentSubject) setCurrentSubject(detected)
 
-    // A message is a reply if we're mid-question AND it's not a new question
-    // forceReply overrides this for hint/explain button clicks
     const isReply = forceReply || questionActive
 
     const userMsg = {
@@ -124,7 +121,6 @@ export default function Chat() {
     setInput('')
     setLoading(true)
 
-    // Only log and count brand new questions
     if (!isReply) {
       setSessionQuestions(prev => prev + 1)
       logQuestion(subject, text.slice(0, 60))
@@ -140,7 +136,6 @@ export default function Chat() {
       }))
       const parsed = await askStudyBuddy(apiHistory, subject, isReply)
 
-      // If the AI says COMPLETE, close out the question
       if (parsed.level === 'COMPLETE') {
         setQuestionActive(false)
         markConceptMastered()
@@ -165,8 +160,7 @@ export default function Chat() {
           content: 'Something went wrong.',
           parsed: {
             level: 'HINT',
-            message:
-              'Something went wrong connecting to StudyBuddy. Check your API key and internet connection.',
+            message: 'Something went wrong connecting to StudyBuddy. Check your API key and internet connection.',
             question: null,
             subject,
           },
@@ -193,8 +187,6 @@ export default function Chat() {
     }
   }
 
-  const [confirmClear, setConfirmClear] = useState(false)
-
   function clearSession(subjectToClear) {
     if (!confirmClear) {
       setConfirmClear(true)
@@ -217,12 +209,13 @@ export default function Chat() {
 
   return (
     <div
-      className="h-screen flex overflow-hidden"
+      className="page-enter h-screen flex overflow-hidden"
       style={{ backgroundColor: '#F8F7F4' }}
     >
-      {/* Sidebar */}
+
+      {/* Sidebar — hidden on mobile */}
       <div
-        className="w-56 flex-shrink-0 bg-white flex flex-col overflow-hidden"
+        className="hidden md:flex w-56 flex-shrink-0 bg-white flex-col overflow-hidden"
         style={{ borderRight: '0.5px solid #e5e7eb' }}
       >
         <div
@@ -235,16 +228,12 @@ export default function Chat() {
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <circle cx="8" cy="6.5" r="4" fill="white" opacity="0.9" />
-              <rect x="6.5" y="9.5" width="3" height="1.2" rx="0.6"
-                fill="white" opacity="0.6" />
-              <rect x="7" y="11" width="2" height="1.2" rx="0.6"
-                fill="white" opacity="0.4" />
+              <rect x="6.5" y="9.5" width="3" height="1.2" rx="0.6" fill="white" opacity="0.6" />
+              <rect x="7" y="11" width="2" height="1.2" rx="0.6" fill="white" opacity="0.4" />
             </svg>
           </div>
           <div>
-            <div className="text-[14px] font-medium text-gray-900">
-              StudyBuddy
-            </div>
+            <div className="text-[14px] font-medium text-gray-900">StudyBuddy</div>
             <div className="text-[11px] text-gray-400">AI learning companion</div>
           </div>
         </div>
@@ -260,13 +249,10 @@ export default function Chat() {
               <button
                 key={subject}
                 onClick={() => {
-                  const newSubject = subject
-                  setCurrentSubject(newSubject)
+                  setCurrentSubject(subject)
                   setQuestionActive(false)
-
-                  // Load existing session for this subject if one exists
                   try {
-                    const saved = localStorage.getItem(getSessionKey(newSubject))
+                    const saved = localStorage.getItem(getSessionKey(subject))
                     if (saved) {
                       const parsed = JSON.parse(saved)
                       setMessages(parsed.messages || [])
@@ -307,9 +293,7 @@ export default function Chat() {
           </div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[12px] text-gray-500">Questions</span>
-            <span className="text-[12px] font-medium text-gray-900">
-              {sessionQuestions}
-            </span>
+            <span className="text-[12px] font-medium text-gray-900">{sessionQuestions}</span>
           </div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[12px] text-gray-500">Concepts mastered</span>
@@ -360,11 +344,28 @@ export default function Chat() {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Chat header */}
         <div
-          className="bg-white flex items-center justify-between px-5 py-3 flex-shrink-0"
+          className="bg-white flex items-center justify-between px-4 py-3 flex-shrink-0"
           style={{ borderBottom: '0.5px solid #e5e7eb' }}
         >
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:bg-gray-50"
+              style={{ border: '0.5px solid #e5e7eb' }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path
+                  d="M9 2L5 7L9 12"
+                  stroke="#6B7280"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
             <div
               className="px-3 py-1 rounded-full text-[12px] font-medium"
               style={{
@@ -374,7 +375,7 @@ export default function Chat() {
             >
               {currentSubject || 'Ask anything'}
             </div>
-            <div className="text-[12px] text-gray-400">
+            <div className="hidden md:block text-[12px] text-gray-400">
               {questionActive
                 ? 'Working through a problem...'
                 : 'Ask anything — StudyBuddy will guide you'}
@@ -382,13 +383,14 @@ export default function Chat() {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-            <span className="text-[12px] text-gray-400">Active session</span>
+            <span className="text-[12px] text-gray-400">Active</span>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-4">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center text-center py-20">
+            <div className="flex flex-col items-center justify-center text-center py-16">
               <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
                 style={{ backgroundColor: '#EEF2FF' }}
@@ -407,7 +409,7 @@ export default function Chat() {
               <div className="text-[13px] text-gray-400 max-w-xs leading-relaxed mb-6">
                 Ask any question about{' '}
                 {currentSubject ? currentSubject.toLowerCase() : 'any subject'}.
-                StudyBuddy guides you to the answer — it never just gives it to you.
+                StudyBuddy guides you — never just gives you the answer.
               </div>
               <div className="flex flex-col gap-2 w-full max-w-xs">
                 {[
@@ -495,23 +497,21 @@ export default function Chat() {
 
         {/* Input area */}
         <div
-          className="bg-white px-5 py-4 flex-shrink-0"
+          className="bg-white px-4 py-3 flex-shrink-0"
           style={{ borderTop: '0.5px solid #e5e7eb' }}
         >
-          <div className="flex gap-3 items-center">
+          <div className="flex gap-2 items-center">
             <input
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
-              onKeyDown={e =>
-                e.key === 'Enter' && !e.shiftKey && handleSend()
-              }
+              onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
               placeholder={
                 questionActive
-                  ? 'Ask a follow-up or start a new question...'
-                  : 'Ask a question about anything you\'re studying...'
+                  ? 'Ask a follow-up or new question...'
+                  : "Ask anything you're studying..."
               }
-              className="flex-1 px-4 py-2.5 rounded-2xl text-[13px] text-gray-800 outline-none transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-2xl text-[13px] text-gray-800 outline-none"
               style={{
                 backgroundColor: '#F8F7F4',
                 border: '0.5px solid #e5e7eb',
@@ -534,6 +534,7 @@ export default function Chat() {
             StudyBuddy guides you — not gives you the answer
           </div>
         </div>
+
       </div>
     </div>
   )

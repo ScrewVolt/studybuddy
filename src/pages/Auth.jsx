@@ -51,6 +51,21 @@ export default function Auth() {
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-gray-600 transition-colors mb-6 self-start"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M9 2L5 7L9 12"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Back to home
+          </button>
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
             style={{ backgroundColor: '#4338CA' }}

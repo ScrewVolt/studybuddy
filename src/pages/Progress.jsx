@@ -158,7 +158,7 @@ export default function Progress() {
         {progress.totalQuestions > 0 && (
           <>
             {/* Top stats */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 {
                   value: progress.totalQuestions,
@@ -202,7 +202,7 @@ export default function Progress() {
             </div>
 
             {/* Activity + subject breakdown */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               {/* 7-day activity */}
               <div
@@ -350,7 +350,7 @@ export default function Progress() {
                 <span>Excellent</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
                   {
                     label: 'Avg hints per question',

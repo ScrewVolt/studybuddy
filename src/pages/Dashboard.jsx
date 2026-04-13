@@ -238,7 +238,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {[
               {
                 step: '01',
@@ -317,7 +317,7 @@ export default function Dashboard() {
             <div className="text-[11px] font-medium uppercase tracking-widest text-gray-400 mb-3">
               The hint ladder — StudyBuddy's core feature
             </div>
-            <div className="flex items-stretch gap-3">
+            <div className="flex flex-col md:flex-row items-stretch gap-3">
               {[
                 {
                   level: 'Nudge',

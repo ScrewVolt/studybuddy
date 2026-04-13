@@ -208,7 +208,7 @@ export default function Landing() {
             <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
             Free for students · No credit card required
           </div>
-          <h1 className="text-[42px] font-medium text-white leading-tight mb-4">
+          <h1 className="text-[28px] md:text-[42px] font-medium text-white leading-tight mb-4">
             The AI tutor that teaches
             <br />
             <span style={{ color: '#A5B4FC' }}>you to think, not copy</span>
@@ -240,7 +240,7 @@ export default function Landing() {
         className="bg-white px-6 py-4"
         style={{ borderBottom: '0.5px solid #e5e7eb' }}
       >
-        <div className="max-w-3xl mx-auto grid grid-cols-4 gap-4">
+        <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { value: '4', label: 'Subjects covered' },
             { value: '3', label: 'Hint levels' },
@@ -277,7 +277,7 @@ export default function Landing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
             className="rounded-2xl p-5"
             style={{ backgroundColor: '#FEF2F2', border: '0.5px solid #FECACA' }}
@@ -354,7 +354,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
             {FEATURES.map((feature, i) => (
               <button
                 key={feature.number}
@@ -707,7 +707,7 @@ export default function Landing() {
           ].map(({ path, name, color, bg, description }) => (
             <div
               key={path}
-              className="bg-white rounded-xl p-4 flex items-start gap-4"
+              className="bg-white rounded-xl p-4 flex flex-col md:flex-row items-start gap-3"
               style={{ border: '0.5px solid #e5e7eb' }}
             >
               <div

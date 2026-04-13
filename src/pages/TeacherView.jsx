@@ -148,7 +148,7 @@ export default function TeacherView() {
         {progress.totalQuestions > 0 && (
           <>
             {/* Stats row */}
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {stats.map(({ value, label, sub, color }) => (
                 <div
                   key={label}
@@ -170,7 +170,7 @@ export default function TeacherView() {
             </div>
 
             {/* Subject breakdown + insight */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               {/* Subject breakdown */}
               <div

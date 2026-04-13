@@ -191,7 +191,7 @@ export default function Sessions() {
 
               {/* Stats row */}
               <div
-                className="px-5 py-3 flex items-center gap-6"
+                className="px-5 py-3 flex flex-wrap items-center gap-4"
                 style={{ borderTop: '0.5px solid #f9fafb' }}
               >
                 <div>
@@ -240,7 +240,7 @@ export default function Sessions() {
             <div className="text-[13px] font-medium text-gray-700 mb-3">
               Overall stats
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 md:grid-cols-3 gap-3">
               <div>
                 <div className="text-[22px] font-medium text-gray-900 leading-none mb-1">
                   {progress.totalQuestions || 0}
