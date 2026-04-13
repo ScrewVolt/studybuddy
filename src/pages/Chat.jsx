@@ -193,7 +193,14 @@ export default function Chat() {
     }
   }
 
+  const [confirmClear, setConfirmClear] = useState(false)
+
   function clearSession(subjectToClear) {
+    if (!confirmClear) {
+      setConfirmClear(true)
+      setTimeout(() => setConfirmClear(false), 3000)
+      return
+    }
     try {
       localStorage.removeItem(getSessionKey(subjectToClear))
     } catch {
@@ -202,6 +209,7 @@ export default function Chat() {
     setMessages([])
     setSessionQuestions(0)
     setQuestionActive(false)
+    setConfirmClear(false)
   }
 
   const subjectConfig = SUBJECTS[currentSubject] || SUBJECTS.Mathematics
@@ -326,11 +334,15 @@ export default function Chat() {
             disabled={messages.length === 0}
             className="w-full py-2 mb-1 text-[12px] font-medium rounded-lg transition-all disabled:opacity-30"
             style={{
-              backgroundColor: messages.length > 0 ? '#EEF2FF' : 'transparent',
-              color: '#4338CA',
+              backgroundColor: confirmClear
+                ? '#FEF2F2'
+                : messages.length > 0
+                  ? '#EEF2FF'
+                  : 'transparent',
+              color: confirmClear ? '#DC2626' : '#4338CA',
             }}
           >
-            New session
+            {confirmClear ? 'Tap again to confirm' : 'New session'}
           </button>
           <button
             onClick={() => navigate('/dashboard')}
