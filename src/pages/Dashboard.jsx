@@ -5,6 +5,7 @@ import SubjectCard from '../components/SubjectCard'
 import { useProgress } from '../hooks/useProgress'
 import { SUBJECT_NAMES, SUBJECTS } from '../utils/subjects'
 import { seedDemoData, clearDemoData } from '../utils/seedData'
+import { useAuth } from '../hooks/useAuth'
 
 function formatTime(iso) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -20,6 +21,12 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { progress, resetProgress } = useProgress()
   const [seeded, setSeeded] = useState(false)
+
+  const { user } = useAuth()
+
+  const firstName = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(' ')[0]
+    : user?.email?.split('@')[0] || 'there'
 
   const recentSubject = progress.recentActivity[0]?.subject || 'Mathematics'
   const recentTopic = progress.recentActivity[0]?.topic || 'Linear equations'
@@ -102,7 +109,7 @@ export default function Dashboard() {
                 : new Date().getHours() < 17
                   ? 'afternoon'
                   : 'evening'}
-              , Miguel!
+              , {firstName}!
             </div>
             <div
               className="text-[13px] leading-relaxed max-w-xs"
