@@ -13,15 +13,6 @@ function formatTime(iso) {
   return `${days}d ago`
 }
 
-function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-}
-
 export default function TeacherView() {
   const navigate = useNavigate()
   const { progress } = useProgress()
@@ -158,7 +149,7 @@ export default function TeacherView() {
           <>
             {/* Stats row */}
             <div className="grid grid-cols-4 gap-3">
-              {stats.map(({ value, label, sub, color, bg }) => (
+              {stats.map(({ value, label, sub, color }) => (
                 <div
                   key={label}
                   className="bg-white rounded-xl p-4"

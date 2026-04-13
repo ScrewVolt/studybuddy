@@ -1,57 +1,46 @@
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SUBJECTS, SUBJECT_NAMES } from '../utils/subjects'
 import { useProgress } from '../hooks/useProgress'
 
 const getSessionKey = (subject) => `studybuddy_session_${subject || 'default'}`
 
-function formatTime(iso) {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-  if (mins < 2) return 'Just now'
-  if (mins < 60) return `${mins}m ago`
-  if (hours < 24) return `${hours}h ago`
-  return `${days}d ago`
-}
-
-function loadAllSessions() {
-  return SUBJECT_NAMES.reduce((acc, subject) => {
-    try {
-      const saved = localStorage.getItem(getSessionKey(subject))
-      if (!saved) return acc
-      const parsed = JSON.parse(saved)
-      if (!parsed.messages?.length) return acc
-      acc.push({
-        subject,
-        messages: parsed.messages,
-        sessionQuestions: parsed.sessionQuestions || 0,
-        questionActive: parsed.questionActive || false,
-        lastMessageTime: parsed.messages.at(-1)?.id?.split('-')[1]
-          ? new Date(parseInt(parsed.messages.at(-1).id.split('-')[1])).toISOString()
-          : new Date().toISOString(),
-        messageCount: parsed.messages.length,
-        userMessages: parsed.messages.filter(m => m.role === 'user').length,
-      })
-    } catch {
-      return acc
-    }
-    return acc
-  }, []).sort((a, b) =>
-    new Date(b.lastMessageTime) - new Date(a.lastMessageTime)
-  )
-}
-
 export default function Sessions() {
   const navigate = useNavigate()
   const { progress } = useProgress()
-  const sessions = loadAllSessions()
+  const sessions = useMemo(() => {
+    const loaded = []
+    SUBJECT_NAMES.forEach(subject => {
+      try {
+        const saved = localStorage.getItem(getSessionKey(subject))
+        if (!saved) return
+        const parsed = JSON.parse(saved)
+        if (!parsed.messages || parsed.messages.length === 0) return
+        const userMessages = parsed.messages.filter(m => m.role === 'user')
+        if (userMessages.length === 0) return
+        loaded.push({
+          subject,
+          messages: parsed.messages,
+          sessionQuestions: parsed.sessionQuestions || 0,
+          questionActive: parsed.questionActive || false,
+          userMessages,
+          messageCount: parsed.messages.length,
+        })
+      } catch {
+        // skip malformed session
+      }
+    })
+    return loaded
+  }, [])
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
+    <div className="page-enter min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
 
       {/* Header */}
-      <div className="page-enter min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
+      <div
+        className="bg-white px-8 py-4 flex items-center justify-between"
+        style={{ borderBottom: '0.5px solid #e5e7eb' }}
+      >
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard')}
@@ -78,7 +67,6 @@ export default function Sessions() {
             </div>
           </div>
         </div>
-
         <button
           onClick={() => navigate('/chat')}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium transition-opacity hover:opacity-80"
@@ -133,12 +121,9 @@ export default function Sessions() {
 
         {/* Session cards */}
         {sessions.map(session => {
-          const config = SUBJECTS[session.subject]
-          const preview = session.messages
-            .filter(m => m.role === 'user')
-            .at(0)?.content || 'No messages yet'
-
-          const hintsUsed = progress.recentActivity
+          const config = SUBJECTS[session.subject] || SUBJECTS.Mathematics
+          const preview = session.userMessages[0]?.content || 'No messages yet'
+          const hintsUsed = (progress.recentActivity || [])
             .filter(a => a.subject === session.subject)
             .reduce((sum, a) => sum + (a.hintsUsed || 0), 0)
 
@@ -155,7 +140,7 @@ export default function Sessions() {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: config.lightColor }}
                   >
                     <div
@@ -168,7 +153,7 @@ export default function Sessions() {
                       {session.subject}
                     </div>
                     <div className="text-[11px] text-gray-400">
-                      Last active {formatTime(session.lastMessageTime)}
+                      {session.userMessages.length} question{session.userMessages.length !== 1 ? 's' : ''} asked
                     </div>
                   </div>
                 </div>
@@ -183,13 +168,13 @@ export default function Sessions() {
                     </span>
                   )}
                   <span
-                    className="text-[11px] px-2.5 py-1 rounded-full"
+                    className="text-[11px] px-2.5 py-1 rounded-full font-medium"
                     style={{
                       backgroundColor: config.lightColor,
                       color: config.color,
                     }}
                   >
-                    {session.userMessages} question{session.userMessages !== 1 ? 's' : ''}
+                    {session.messageCount} messages
                   </span>
                 </div>
               </div>
@@ -199,9 +184,7 @@ export default function Sessions() {
                 <div className="text-[11px] font-medium uppercase tracking-widest text-gray-400 mb-1.5">
                   First question
                 </div>
-                <div
-                  className="text-[13px] text-gray-600 leading-relaxed truncate"
-                >
+                <div className="text-[13px] text-gray-600 leading-relaxed truncate">
                   "{preview}"
                 </div>
               </div>
@@ -212,33 +195,24 @@ export default function Sessions() {
                 style={{ borderTop: '0.5px solid #f9fafb' }}
               >
                 <div>
-                  <div className="text-[11px] text-gray-400 mb-0.5">
-                    Messages
-                  </div>
+                  <div className="text-[11px] text-gray-400 mb-0.5">Messages</div>
                   <div className="text-[13px] font-medium text-gray-900">
                     {session.messageCount}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-400 mb-0.5">
-                    Hints used
-                  </div>
+                  <div className="text-[11px] text-gray-400 mb-0.5">Hints used</div>
                   <div className="text-[13px] font-medium text-gray-900">
                     {hintsUsed}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-gray-400 mb-0.5">
-                    Concepts mastered
-                  </div>
+                  <div className="text-[11px] text-gray-400 mb-0.5">Questions asked</div>
                   <div className="text-[13px] font-medium text-gray-900">
-                    {progress.subjectCounts[session.subject] > 0
-                      ? progress.conceptsMastered
-                      : 0}
+                    {session.sessionQuestions}
                   </div>
                 </div>
-
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ml-auto">
                   <button
                     onClick={() =>
                       navigate('/chat', { state: { subject: session.subject } })
@@ -269,7 +243,7 @@ export default function Sessions() {
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <div className="text-[22px] font-medium text-gray-900 leading-none mb-1">
-                  {progress.totalQuestions}
+                  {progress.totalQuestions || 0}
                 </div>
                 <div className="text-[12px] text-gray-400">
                   Total questions asked
@@ -280,7 +254,7 @@ export default function Sessions() {
                   className="text-[22px] font-medium leading-none mb-1"
                   style={{ color: '#059669' }}
                 >
-                  {progress.conceptsMastered}
+                  {progress.conceptsMastered || 0}
                 </div>
                 <div className="text-[12px] text-gray-400">
                   Concepts mastered
@@ -291,11 +265,9 @@ export default function Sessions() {
                   className="text-[22px] font-medium leading-none mb-1"
                   style={{ color: '#D97706' }}
                 >
-                  {progress.streak}
+                  {progress.streak || 0}
                 </div>
-                <div className="text-[12px] text-gray-400">
-                  Day streak
-                </div>
+                <div className="text-[12px] text-gray-400">Day streak</div>
               </div>
             </div>
           </div>
