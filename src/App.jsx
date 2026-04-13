@@ -6,6 +6,7 @@ import Sessions from './pages/Sessions'
 import Progress from './pages/Progress'
 import Auth from './pages/Auth'
 import ProtectedRoute from './components/ProtectedRoute'
+import Landing from './pages/Landing'
 
 function NotFound() {
   const navigate = useNavigate()
@@ -51,7 +52,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
         <Route
           path="/dashboard"
@@ -74,6 +75,7 @@ export default function App() {
           element={<ProtectedRoute><TeacherView /></ProtectedRoute>}
         />
         <Route path="*" element={<NotFound />} />
+        <Route path="/landing" element={<Landing />} />
       </Routes>
     </BrowserRouter>
   )
