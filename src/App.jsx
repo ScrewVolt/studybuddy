@@ -4,6 +4,8 @@ import Chat from './pages/Chat'
 import TeacherView from './pages/TeacherView'
 import Sessions from './pages/Sessions'
 import Progress from './pages/Progress'
+import Auth from './pages/Auth'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function NotFound() {
   const navigate = useNavigate()
@@ -36,7 +38,7 @@ function NotFound() {
       </div>
       <button
         onClick={() => navigate('/dashboard')}
-        className="text-[13px] font-medium px-4 py-2 rounded-lg transition-colors"
+        className="text-[13px] font-medium px-4 py-2 rounded-lg"
         style={{ backgroundColor: '#EEF2FF', color: '#4338CA' }}
       >
         Back to dashboard
@@ -50,12 +52,28 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/teacher" element={<TeacherView />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route
+          path="/dashboard"
+          element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
+        />
+        <Route
+          path="/chat"
+          element={<ProtectedRoute><Chat /></ProtectedRoute>}
+        />
+        <Route
+          path="/sessions"
+          element={<ProtectedRoute><Sessions /></ProtectedRoute>}
+        />
+        <Route
+          path="/progress"
+          element={<ProtectedRoute><Progress /></ProtectedRoute>}
+        />
+        <Route
+          path="/teacher"
+          element={<ProtectedRoute><TeacherView /></ProtectedRoute>}
+        />
         <Route path="*" element={<NotFound />} />
-        <Route path="/sessions" element={<Sessions />} />
-        <Route path="/progress" element={<Progress />} />
       </Routes>
     </BrowserRouter>
   )

@@ -1,9 +1,11 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 
 export default function TopNav({ progress }) {
   const navigate = useNavigate()
   const location = useLocation()
   const isActive = (path) => location.pathname === path
+  const { user, signOut } = useAuth()
 
   return (
     <nav className="h-14 bg-white border-b border-gray-100 px-6 flex items-center justify-between flex-shrink-0">
@@ -34,8 +36,8 @@ export default function TopNav({ progress }) {
               key={path}
               onClick={() => navigate(path)}
               className={`px-3 py-1.5 rounded-md text-[13px] transition-colors ${isActive(path)
-                  ? 'font-medium'
-                  : 'text-gray-500 hover:bg-gray-50'
+                ? 'font-medium'
+                : 'text-gray-500 hover:bg-gray-50'
                 }`}
               style={isActive(path)
                 ? { color: '#4338CA', backgroundColor: '#EEF2FF' }
@@ -62,11 +64,21 @@ export default function TopNav({ progress }) {
             <span>{progress.streak}-day streak</span>
           </div>
         )}
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-medium text-white"
-          style={{ backgroundColor: '#4338CA' }}
-        >
-          MG
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-medium text-white flex-shrink-0"
+            style={{ backgroundColor: '#4338CA' }}
+          >
+            {user?.user_metadata?.full_name
+              ? user.user_metadata.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+              : user?.email?.slice(0, 2).toUpperCase() || 'SB'}
+          </div>
+          <button
+            onClick={signOut}
+            className="text-[12px] text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Sign out
+          </button>
         </div>
       </div>
 
