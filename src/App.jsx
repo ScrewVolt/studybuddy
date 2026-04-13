@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-route
 import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
 import TeacherView from './pages/TeacherView'
+import Sessions from './pages/Sessions'
 
 function NotFound() {
   const navigate = useNavigate()
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/teacher" element={<TeacherView />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="/sessions" element={<Sessions />} />
       </Routes>
     </BrowserRouter>
   )
