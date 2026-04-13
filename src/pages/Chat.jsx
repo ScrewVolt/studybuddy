@@ -14,36 +14,48 @@ export default function Chat() {
   const { progress, logQuestion, incrementHints, markConceptMastered } =
     useProgress()
 
-  const SESSION_KEY = 'studybuddy_session'
-
-  const [messages, setMessages] = useState(() => {
-    try {
-      const saved = localStorage.getItem(SESSION_KEY)
-      if (!saved) return []
-      const parsed = JSON.parse(saved)
-      return parsed.messages || []
-    } catch {
-      return []
-    }
-  })
-
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
+  const getSessionKey = (subject) =>
+    `studybuddy_session_${subject || 'default'}`
 
   const [currentSubject, setCurrentSubject] = useState(() => {
     if (initialSubject) return initialSubject
     try {
-      const saved = localStorage.getItem(SESSION_KEY)
-      if (!saved) return null
-      return JSON.parse(saved).subject || null
+      const keys = Object.keys(localStorage).filter(k =>
+        k.startsWith('studybuddy_session_')
+      )
+      if (keys.length === 0) return null
+      const sessions = keys
+        .map(k => ({ key: k, ...JSON.parse(localStorage.getItem(k)) }))
+        .filter(s => s.messages?.length > 0)
+        .sort((a, b) => {
+          const aTime = a.messages?.at(-1)?.id?.split('-')[1] || 0
+          const bTime = b.messages?.at(-1)?.id?.split('-')[1] || 0
+          return bTime - aTime
+        })
+      if (sessions.length === 0) return null
+      return sessions[0].subject || null
     } catch {
       return null
     }
   })
 
-  const [sessionQuestions, setSessionQuestions] = useState(() => {
+  const [messages, setMessages] = useState(() => {
+    const subject = initialSubject || currentSubject
+    if (!subject) return []
     try {
-      const saved = localStorage.getItem(SESSION_KEY)
+      const saved = localStorage.getItem(getSessionKey(subject))
+      if (!saved) return []
+      return JSON.parse(saved).messages || []
+    } catch {
+      return []
+    }
+  })
+
+  const [sessionQuestions, setSessionQuestions] = useState(() => {
+    const subject = initialSubject || currentSubject
+    if (!subject) return 0
+    try {
+      const saved = localStorage.getItem(getSessionKey(subject))
       if (!saved) return 0
       return JSON.parse(saved).sessionQuestions || 0
     } catch {
@@ -52,8 +64,10 @@ export default function Chat() {
   })
 
   const [questionActive, setQuestionActive] = useState(() => {
+    const subject = initialSubject || currentSubject
+    if (!subject) return false
     try {
-      const saved = localStorage.getItem(SESSION_KEY)
+      const saved = localStorage.getItem(getSessionKey(subject))
       if (!saved) return false
       return JSON.parse(saved).questionActive || false
     } catch {
@@ -61,13 +75,17 @@ export default function Chat() {
     }
   })
 
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
-  // Persist session to localStorage whenever anything changes
+  // Save session under the current subject's key
   useEffect(() => {
+    if (!currentSubject) return
     try {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({
+      localStorage.setItem(getSessionKey(currentSubject), JSON.stringify({
         messages,
         subject: currentSubject,
         sessionQuestions,
@@ -222,11 +240,28 @@ export default function Chat() {
               <button
                 key={subject}
                 onClick={() => {
-                  setCurrentSubject(subject)
+                  const newSubject = subject
+                  setCurrentSubject(newSubject)
                   setQuestionActive(false)
-                  setMessages([])
-                  setSessionQuestions(0)
-                  localStorage.removeItem(SESSION_KEY)
+
+                  // Load existing session for this subject if one exists
+                  try {
+                    const saved = localStorage.getItem(getSessionKey(newSubject))
+                    if (saved) {
+                      const parsed = JSON.parse(saved)
+                      setMessages(parsed.messages || [])
+                      setSessionQuestions(parsed.sessionQuestions || 0)
+                      setQuestionActive(parsed.questionActive || false)
+                    } else {
+                      setMessages([])
+                      setSessionQuestions(0)
+                      setQuestionActive(false)
+                    }
+                  } catch {
+                    setMessages([])
+                    setSessionQuestions(0)
+                    setQuestionActive(false)
+                  }
                 }}
                 className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-colors mb-0.5"
                 style={{
