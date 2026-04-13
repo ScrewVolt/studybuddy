@@ -193,6 +193,17 @@ export default function Chat() {
     }
   }
 
+  function clearSession(subjectToClear) {
+    try {
+      localStorage.removeItem(getSessionKey(subjectToClear))
+    } catch {
+      console.warn('Could not clear session')
+    }
+    setMessages([])
+    setSessionQuestions(0)
+    setQuestionActive(false)
+  }
+
   const subjectConfig = SUBJECTS[currentSubject] || SUBJECTS.Mathematics
 
   return (
@@ -310,6 +321,17 @@ export default function Chat() {
               {questionActive ? 'In progress' : 'Ready'}
             </span>
           </div>
+          <button
+            onClick={() => clearSession(currentSubject)}
+            disabled={messages.length === 0}
+            className="w-full py-2 mb-1 text-[12px] font-medium rounded-lg transition-all disabled:opacity-30"
+            style={{
+              backgroundColor: messages.length > 0 ? '#EEF2FF' : 'transparent',
+              color: '#4338CA',
+            }}
+          >
+            New session
+          </button>
           <button
             onClick={() => navigate('/dashboard')}
             className="w-full py-1.5 text-[12px] text-gray-400 hover:text-gray-600 transition-colors text-left flex items-center gap-1.5"
