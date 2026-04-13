@@ -242,7 +242,7 @@ export default function Landing() {
       >
         <div className="max-w-3xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { value: '4', label: 'Subjects covered' },
+            { value: '4', label: 'Core Subjects' },
             { value: '3', label: 'Hint levels' },
             { value: '100%', label: 'Guided learning' },
             { value: '0', label: 'Direct answers given' },

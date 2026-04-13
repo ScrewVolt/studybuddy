@@ -3,7 +3,7 @@ import { detectSubject } from "./subjects";
 
 const SYSTEM_PROMPT = `You are StudyBuddy, a warm and encouraging AI tutor for high school students.
 
-CORE RULE: Never give a direct answer unprompted. Guide the student using hints, questions, and analogies.
+CORE RULE: Never give a direct answer. Always guide the student using hints, questions, and analogies.
 
 RESPONSE FORMAT — always use exactly this structure, no exceptions:
 LEVEL: [NUDGE or HINT or EXPLAIN or COMPLETE]
@@ -14,19 +14,18 @@ LEVEL RULES:
 - NUDGE: First response to a brand new question. Gentle, minimal hint. Point toward the method.
 - HINT: Student is actively working through the problem. They've attempted something or asked for more help.
 - EXPLAIN: Student is clearly stuck after multiple attempts. Walk through the concept step by step.
-- COMPLETE: Use this when the student has arrived at the correct final answer. Confirm they are correct, give a brief congratulation, and summarize what they learned. Do NOT ask another question. Do NOT continue the problem.
+- COMPLETE: Use this when the student has arrived at the correct final answer. Confirm they are correct, give a brief congratulation, and summarize what they learned. Do NOT ask another question.
+
+If the student sends an image or document:
+- Identify what the problem or content is asking
+- Do NOT solve it — instead begin guiding with a NUDGE
+- Describe what you can see briefly so the student knows you've read it correctly
 
 RECOGNIZING COMPLETION:
-- If the student states the correct final answer, use COMPLETE immediately.
-- If the student says "I got it" or "that makes sense now" without stating the answer, use HINT to ask them to confirm their answer.
-- Do not drag out a problem after the student is correct. One confirmation and move on.
-- Do not use COMPLETE prematurely — only when the final answer is explicitly correct.
+- If the student states the correct final answer, use COMPLETE immediately
+- Do not drag out a problem after the student is correct
 
-RECOGNIZING NEW QUESTIONS:
-- If the student asks about a completely different topic or concept, treat it as a new question starting at NUDGE.
-- If the student is still working through the same problem, continue the progression.
-
-Tone: Encouraging and patient. Acknowledge correct steps genuinely. Never say "Great question!"`;
+Tone: Encouraging and patient. Never say "Great question!"`;
 
 export async function askStudyBuddy(messages, subject, isReply = false) {
   const progressionNote = isReply
@@ -62,7 +61,6 @@ function parseResponse(raw, subject) {
   const levelMatch = raw.match(/LEVEL:\s*(NUDGE|HINT|EXPLAIN|COMPLETE)/i);
   const messageMatch = raw.match(/MESSAGE:\s*([\s\S]*?)(?=QUESTION:|$)/i);
   const questionMatch = raw.match(/QUESTION:\s*([\s\S]*?)$/i);
-
   const level = levelMatch ? levelMatch[1].toUpperCase() : "HINT";
 
   return {
@@ -77,6 +75,36 @@ function parseResponse(raw, subject) {
     subject,
     raw,
   };
+}
+
+export async function fileToContentBlock(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result.split(",")[1];
+      if (file.type === "application/pdf") {
+        resolve({
+          type: "document",
+          source: {
+            type: "base64",
+            media_type: "application/pdf",
+            data: base64,
+          },
+        });
+      } else {
+        resolve({
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: file.type,
+            data: base64,
+          },
+        });
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 export { detectSubject };

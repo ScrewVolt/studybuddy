@@ -5,11 +5,16 @@ import MessageBubble from '../components/MessageBubble'
 import { useProgress } from '../hooks/useProgress'
 import { askStudyBuddy, detectSubject } from '../utils/studyBuddyAI'
 import { SUBJECTS, SUBJECT_NAMES } from '../utils/subjects'
+import FilePreview from '../components/FilePreview'
+import { fileToContentBlock } from '../utils/studyBuddyAI'
 
 export default function Chat() {
   const navigate = useNavigate()
   const location = useLocation()
   const initialSubject = location.state?.subject || null
+  const fileInputRef = useRef(null)
+  const [attachment, setAttachment] = useState(null)
+  const [attachmentError, setAttachmentError] = useState(null)
 
   const { progress, logQuestion, incrementHints, markConceptMastered, clearSubjectActivity } =
     useProgress()
@@ -102,28 +107,55 @@ export default function Chat() {
 
   async function handleSend(overrideText, forceReply = false) {
     const text = (overrideText !== undefined ? overrideText : input).trim()
-    if (!text || loading) return
+    if (!text && !attachment) return
+    if (loading) return
 
-    const detected = detectSubject(text)
+    const detected = detectSubject(text || 'Mathematics')
     const subject = currentSubject || detected
     if (!currentSubject) setCurrentSubject(detected)
 
     const isReply = forceReply || questionActive
 
+    // Build user message content — text only, or text + file
+    let userContent
+    if (attachment) {
+      try {
+        const fileBlock = await fileToContentBlock(attachment)
+        userContent = [
+          fileBlock,
+          { type: 'text', text: text || 'Can you help me with this?' },
+        ]
+      } catch {
+        setAttachmentError('Could not read that file. Try a different one.')
+        return
+      }
+    } else {
+      userContent = text
+    }
+
     const userMsg = {
       id: `u-${Date.now()}`,
       role: 'user',
-      content: text,
+      content: userContent,
+      displayText: text || '📎 Attached file',
+      hasAttachment: !!attachment,
+      attachmentName: attachment?.name || null,
+      attachmentType: attachment?.type || null,
+      attachmentPreview: attachment && attachment.type.startsWith('image/')
+        ? URL.createObjectURL(attachment)
+        : null,
     }
 
     const updatedMessages = [...messages, userMsg]
     setMessages(updatedMessages)
     setInput('')
+    setAttachment(null)
+    setAttachmentError(null)
     setLoading(true)
 
     if (!isReply) {
       setSessionQuestions(prev => prev + 1)
-      logQuestion(subject, text.slice(0, 60))
+      logQuestion(subject, text.slice(0, 60) || 'File attachment')
       setQuestionActive(true)
     } else {
       incrementHints(subject)
@@ -437,7 +469,12 @@ export default function Chat() {
           {messages.map(msg => (
             <div key={msg.id}>
               {msg.role === 'user' ? (
-                <MessageBubble content={msg.content} />
+                <MessageBubble
+                  content={msg.displayText || (typeof msg.content === 'string' ? msg.content : '📎 Attached file')}
+                  attachmentPreview={msg.attachmentPreview}
+                  attachmentName={msg.attachmentName}
+                  attachmentType={msg.attachmentType}
+                />
               ) : (
                 <div className="flex gap-2.5 items-end">
                   <div
@@ -500,16 +537,75 @@ export default function Chat() {
           className="bg-white px-4 py-3 flex-shrink-0"
           style={{ borderTop: '0.5px solid #e5e7eb' }}
         >
+          {/* File preview */}
+          {attachment && (
+            <FilePreview
+              file={attachment}
+              onRemove={() => {
+                setAttachment(null)
+                setAttachmentError(null)
+              }}
+            />
+          )}
+
+          {/* Error message */}
+          {attachmentError && (
+            <div
+              className="text-[12px] px-3 py-2 rounded-lg mb-2"
+              style={{ backgroundColor: '#FEF2F2', color: '#DC2626' }}
+            >
+              {attachmentError}
+            </div>
+          )}
+
           <div className="flex gap-2 items-center">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files[0]
+                if (!file) return
+                const maxSize = 5 * 1024 * 1024
+                if (file.size > maxSize) {
+                  setAttachmentError('File too large — maximum size is 5MB.')
+                  return
+                }
+                setAttachment(file)
+                setAttachmentError(null)
+                e.target.value = ''
+              }}
+            />
+
+            {/* Attach button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors hover:opacity-80"
+              style={{
+                backgroundColor: attachment ? '#EEF2FF' : '#F3F4F6',
+                border: attachment ? '0.5px solid #c7d2fe' : '0.5px solid #e5e7eb',
+              }}
+              title="Attach image or PDF"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
+                stroke={attachment ? '#4338CA' : '#9CA3AF'} strokeWidth="1.5">
+                <path d="M13.5 7.5l-6 6a3.5 3.5 0 01-5-5l6-6a2 2 0 013 3l-6 6a.5.5 0 01-1-1l5.5-5.5" />
+              </svg>
+            </button>
+
             <input
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
               placeholder={
-                questionActive
-                  ? 'Ask a follow-up or new question...'
-                  : "Ask anything you're studying..."
+                attachment
+                  ? 'Add a question about this file...'
+                  : questionActive
+                    ? 'Ask a follow-up or new question...'
+                    : "Ask anything you're studying..."
               }
               className="flex-1 px-4 py-2.5 rounded-2xl text-[13px] text-gray-800 outline-none"
               style={{
@@ -519,9 +615,10 @@ export default function Chat() {
               onFocus={e => (e.target.style.borderColor = '#818CF8')}
               onBlur={e => (e.target.style.borderColor = '#e5e7eb')}
             />
+
             <button
               onClick={() => handleSend()}
-              disabled={loading || !input.trim()}
+              disabled={loading || (!input.trim() && !attachment)}
               className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-opacity disabled:opacity-40"
               style={{ backgroundColor: '#4338CA' }}
             >
@@ -530,8 +627,9 @@ export default function Chat() {
               </svg>
             </button>
           </div>
+
           <div className="text-[11px] text-gray-300 text-center mt-2">
-            StudyBuddy guides you — not gives you the answer
+            Attach images or PDFs · StudyBuddy guides you — not gives you the answer
           </div>
         </div>
 
