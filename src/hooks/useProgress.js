@@ -3,7 +3,7 @@ import { SUBJECT_NAMES } from "../utils/subjects";
 
 const STORAGE_KEY = "studybuddy_progress";
 
-const defaultProgress = {
+const makeDefault = () => ({
   totalQuestions: 0,
   streak: 0,
   lastStudyDate: null,
@@ -11,17 +11,15 @@ const defaultProgress = {
   totalMinutes: 0,
   subjectCounts: Object.fromEntries(SUBJECT_NAMES.map((s) => [s, 0])),
   recentActivity: [],
-};
+});
 
 export function useProgress() {
   const [progress, setProgress] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved
-        ? { ...defaultProgress, ...JSON.parse(saved) }
-        : defaultProgress;
+      return saved ? { ...makeDefault(), ...JSON.parse(saved) } : makeDefault();
     } catch {
-      return defaultProgress;
+      return makeDefault();
     }
   });
 
@@ -31,41 +29,41 @@ export function useProgress() {
 
   function logQuestion(subject, topic = null) {
     const today = new Date().toDateString();
-
     setProgress((prev) => {
       const isNewDay = prev.lastStudyDate !== today;
-      const newStreak = isNewDay ? prev.streak + 1 : prev.streak;
-
-      const newActivity = {
-        subject,
-        topic: topic || subject,
-        timestamp: new Date().toISOString(),
-        hintsUsed: 0,
-      };
-
       return {
         ...prev,
         totalQuestions: prev.totalQuestions + 1,
-        streak: newStreak,
+        streak: isNewDay ? prev.streak + 1 : prev.streak,
         lastStudyDate: today,
         subjectCounts: {
           ...prev.subjectCounts,
-          [subject]: prev.subjectCounts[subject] + 1,
+          [subject]: (prev.subjectCounts[subject] || 0) + 1,
         },
-        recentActivity: [newActivity, ...prev.recentActivity].slice(0, 20),
+        recentActivity: [
+          {
+            subject,
+            topic: topic || subject,
+            timestamp: new Date().toISOString(),
+            hintsUsed: 0,
+          },
+          ...prev.recentActivity,
+        ].slice(0, 20),
       };
     });
   }
 
   function incrementHints(subject) {
-    setProgress((prev) => ({
-      ...prev,
-      recentActivity: prev.recentActivity.map((a, i) =>
-        i === 0 && a.subject === subject
-          ? { ...a, hintsUsed: a.hintsUsed + 1 }
-          : a
-      ),
-    }));
+    setProgress((prev) => {
+      const activity = [...prev.recentActivity];
+      const idx = activity.findIndex((a) => a.subject === subject);
+      if (idx === -1) return prev;
+      activity[idx] = {
+        ...activity[idx],
+        hintsUsed: activity[idx].hintsUsed + 1,
+      };
+      return { ...prev, recentActivity: activity };
+    });
   }
 
   function markConceptMastered() {
@@ -77,7 +75,7 @@ export function useProgress() {
 
   function resetProgress() {
     localStorage.removeItem(STORAGE_KEY);
-    setProgress(defaultProgress);
+    setProgress(makeDefault());
   }
 
   return {

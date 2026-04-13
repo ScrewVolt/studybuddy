@@ -88,11 +88,23 @@ export default function HintCard({ parsed, onAction, onReply }) {
 
       {/* Body */}
       <div className="px-4 pt-3 pb-2">
-        <div
-          className="text-[11px] font-medium mb-1.5"
-          style={{ color: '#4338CA' }}
-        >
-          StudyBuddy
+        {/* Subject detection tag */}
+        <div className="flex items-center justify-between mb-2">
+          <div
+            className="text-[11px] font-medium"
+            style={{ color: '#4338CA' }}
+          >
+            StudyBuddy
+          </div>
+          <div
+            className="text-[10px] px-2 py-0.5 rounded-full font-medium"
+            style={{
+              backgroundColor: subjectConfig.lightColor,
+              color: subjectConfig.color,
+            }}
+          >
+            {subject}
+          </div>
         </div>
         <p className="text-[13px] text-gray-700 leading-relaxed">{message}</p>
 
