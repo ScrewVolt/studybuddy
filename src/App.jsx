@@ -3,6 +3,7 @@ import Dashboard from './pages/Dashboard'
 import Chat from './pages/Chat'
 import TeacherView from './pages/TeacherView'
 import Sessions from './pages/Sessions'
+import Progress from './pages/Progress'
 
 function NotFound() {
   const navigate = useNavigate()
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/teacher" element={<TeacherView />} />
         <Route path="*" element={<NotFound />} />
         <Route path="/sessions" element={<Sessions />} />
+        <Route path="/progress" element={<Progress />} />
       </Routes>
     </BrowserRouter>
   )
