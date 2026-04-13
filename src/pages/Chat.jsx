@@ -14,18 +14,71 @@ export default function Chat() {
   const { progress, logQuestion, incrementHints, markConceptMastered } =
     useProgress()
 
-  const [messages, setMessages] = useState([])
+  const SESSION_KEY = 'studybuddy_session'
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_KEY)
+      if (!saved) return []
+      const parsed = JSON.parse(saved)
+      return parsed.messages || []
+    } catch {
+      return []
+    }
+  })
+
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [currentSubject, setCurrentSubject] = useState(initialSubject)
-  const [sessionQuestions, setSessionQuestions] = useState(0)
 
-  // Tracks whether we are mid-question or ready for a new one
-  const [questionActive, setQuestionActive] = useState(false)
+  const [currentSubject, setCurrentSubject] = useState(() => {
+    if (initialSubject) return initialSubject
+    try {
+      const saved = localStorage.getItem(SESSION_KEY)
+      if (!saved) return null
+      return JSON.parse(saved).subject || null
+    } catch {
+      return null
+    }
+  })
+
+  const [sessionQuestions, setSessionQuestions] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_KEY)
+      if (!saved) return 0
+      return JSON.parse(saved).sessionQuestions || 0
+    } catch {
+      return 0
+    }
+  })
+
+  const [questionActive, setQuestionActive] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SESSION_KEY)
+      if (!saved) return false
+      return JSON.parse(saved).questionActive || false
+    } catch {
+      return false
+    }
+  })
 
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
+  // Persist session to localStorage whenever anything changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        messages,
+        subject: currentSubject,
+        sessionQuestions,
+        questionActive,
+      }))
+    } catch {
+      console.warn('Could not save session')
+    }
+  }, [messages, currentSubject, sessionQuestions, questionActive])
+
+  // Scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
@@ -171,6 +224,9 @@ export default function Chat() {
                 onClick={() => {
                   setCurrentSubject(subject)
                   setQuestionActive(false)
+                  setMessages([])
+                  setSessionQuestions(0)
+                  localStorage.removeItem(SESSION_KEY)
                 }}
                 className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition-colors mb-0.5"
                 style={{
