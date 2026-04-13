@@ -11,7 +11,7 @@ export default function Chat() {
   const location = useLocation()
   const initialSubject = location.state?.subject || null
 
-  const { progress, logQuestion, incrementHints, markConceptMastered } =
+  const { progress, logQuestion, incrementHints, markConceptMastered, clearSubjectActivity } =
     useProgress()
 
   const getSessionKey = (subject) =>
@@ -210,6 +210,7 @@ export default function Chat() {
     setSessionQuestions(0)
     setQuestionActive(false)
     setConfirmClear(false)
+    clearSubjectActivity(subjectToClear)
   }
 
   const subjectConfig = SUBJECTS[currentSubject] || SUBJECTS.Mathematics

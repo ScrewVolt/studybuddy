@@ -94,11 +94,29 @@ export function useProgress() {
     setProgress(fresh);
   }
 
+  function clearSubjectActivity(subject) {
+    setProgress((prev) => {
+      const next = {
+        ...prev,
+        recentActivity: prev.recentActivity.filter(
+          (a) => a.subject !== subject
+        ),
+        subjectCounts: {
+          ...prev.subjectCounts,
+          [subject]: 0,
+        },
+      };
+      saveToStorage(next);
+      return next;
+    });
+  }
+
   return {
     progress,
     logQuestion,
     incrementHints,
     markConceptMastered,
     resetProgress,
+    clearSubjectActivity,
   };
 }
