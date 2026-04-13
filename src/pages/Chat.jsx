@@ -390,24 +390,44 @@ export default function Chat() {
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center text-center py-20">
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
                 style={{ backgroundColor: '#EEF2FF' }}
               >
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  <circle cx="14" cy="11" r="7" fill="#4338CA" opacity="0.9" />
-                  <rect x="11" y="17" width="6" height="2" rx="1"
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="12" r="8" fill="#4338CA" opacity="0.9" />
+                  <rect x="13" y="19" width="6" height="2" rx="1"
                     fill="#4338CA" opacity="0.6" />
-                  <rect x="12" y="20" width="4" height="2" rx="1"
+                  <rect x="14" y="22" width="4" height="2" rx="1"
                     fill="#4338CA" opacity="0.4" />
                 </svg>
               </div>
-              <div className="text-[15px] font-medium text-gray-700 mb-1.5">
+              <div className="text-[16px] font-medium text-gray-700 mb-2">
                 Ready to help you learn
               </div>
-              <div className="text-[13px] text-gray-400 max-w-xs leading-relaxed">
+              <div className="text-[13px] text-gray-400 max-w-xs leading-relaxed mb-6">
                 Ask any question about{' '}
                 {currentSubject ? currentSubject.toLowerCase() : 'any subject'}.
-                StudyBuddy will guide you — never just give you the answer.
+                StudyBuddy guides you to the answer — it never just gives it to you.
+              </div>
+              <div className="flex flex-col gap-2 w-full max-w-xs">
+                {[
+                  'How do I solve 2x + 5 = 19?',
+                  'What caused World War I?',
+                  'How do I write a strong thesis?',
+                ].map(suggestion => (
+                  <button
+                    key={suggestion}
+                    onClick={() => handleSend(suggestion)}
+                    className="w-full px-4 py-2.5 rounded-xl text-[13px] text-left transition-colors hover:opacity-80"
+                    style={{
+                      backgroundColor: '#EEF2FF',
+                      color: '#4338CA',
+                      border: '0.5px solid #c7d2fe',
+                    }}
+                  >
+                    "{suggestion}"
+                  </button>
+                ))}
               </div>
             </div>
           )}

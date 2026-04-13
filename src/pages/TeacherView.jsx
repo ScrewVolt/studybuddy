@@ -76,7 +76,7 @@ export default function TeacherView() {
   ]
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
+    <div className="page-enter min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
 
       {/* Header */}
       <div

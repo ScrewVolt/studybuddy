@@ -51,10 +51,7 @@ export default function Sessions() {
     <div className="min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
 
       {/* Header */}
-      <div
-        className="bg-white px-8 py-4 flex items-center justify-between"
-        style={{ borderBottom: '0.5px solid #e5e7eb' }}
-      >
+      <div className="page-enter min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard')}

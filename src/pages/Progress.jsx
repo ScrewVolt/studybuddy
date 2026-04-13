@@ -68,7 +68,7 @@ export default function Progress() {
   const maxCount = Math.max(...last7Days.map(d => d.count), 1)
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
+    <div className="page-enter min-h-screen" style={{ backgroundColor: '#F8F7F4' }}>
 
       {/* Header */}
       <div
@@ -222,12 +222,12 @@ export default function Progress() {
                         {count > 0 ? count : ''}
                       </div>
                       <div
-                        className="w-full rounded-md transition-all"
+                        className="w-full transition-all"
                         style={{
                           height: `${Math.max((count / maxCount) * 72, count > 0 ? 8 : 3)}px`,
-                          backgroundColor:
-                            count > 0 ? '#4338CA' : '#e5e7eb',
+                          backgroundColor: count > 0 ? '#4338CA' : '#e5e7eb',
                           opacity: count > 0 ? 0.7 + (count / maxCount) * 0.3 : 1,
+                          borderRadius: '4px 4px 2px 2px',
                         }}
                       />
                       <div className="text-[11px] text-gray-400">{label}</div>

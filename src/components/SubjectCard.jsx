@@ -47,7 +47,7 @@ export default function SubjectCard({ subject, count, isActive }) {
   return (
     <div
       onClick={handleStart}
-      className="bg-white rounded-xl p-4 cursor-pointer transition-all hover:shadow-sm group"
+      className="subject-card-hover bg-white rounded-xl p-4 cursor-pointer group"
       style={{
         border: isActive
           ? `2px solid ${config.color}`
