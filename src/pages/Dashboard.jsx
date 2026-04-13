@@ -204,12 +204,6 @@ export default function Dashboard() {
             <span className="text-[14px] font-medium text-gray-900">
               Choose a subject
             </span>
-            <span
-              className="text-[12px] cursor-pointer"
-              style={{ color: '#4338CA' }}
-            >
-              View all topics →
-            </span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {SUBJECT_NAMES.map(subject => (
@@ -480,12 +474,6 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-[14px] font-medium text-gray-900">
                 Recent activity
-              </span>
-              <span
-                className="text-[12px] cursor-pointer"
-                style={{ color: '#4338CA' }}
-              >
-                See all →
               </span>
             </div>
             <div className="bg-white border border-gray-100 rounded-xl p-4">
