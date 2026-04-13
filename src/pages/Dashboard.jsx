@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TopNav from '../components/TopNav'
 import SubjectCard from '../components/SubjectCard'
 import { useProgress } from '../hooks/useProgress'
 import { SUBJECT_NAMES, SUBJECTS } from '../utils/subjects'
+import { seedDemoData, clearDemoData } from '../utils/seedData'
 
 function formatTime(iso) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -17,6 +19,7 @@ function formatTime(iso) {
 export default function Dashboard() {
   const navigate = useNavigate()
   const { progress, resetProgress } = useProgress()
+  const [seeded, setSeeded] = useState(false)
 
   const recentSubject = progress.recentActivity[0]?.subject || 'Mathematics'
   const recentTopic = progress.recentActivity[0]?.topic || 'Linear equations'
@@ -35,7 +38,7 @@ export default function Dashboard() {
     {
       value: progress.totalQuestions,
       label: 'Questions answered',
-      change: `Across all subjects`,
+      change: 'Across all subjects',
       color: '#4338CA',
     },
     {
@@ -84,10 +87,12 @@ export default function Dashboard() {
                 backgroundColor: 'rgba(255,255,255,0.04)',
               }}
             />
-            <div className="text-[11px] font-medium uppercase tracking-widest mb-1.5"
-              style={{ color: '#818CF8' }}>
+            <div
+              className="text-[11px] font-medium uppercase tracking-widest mb-1.5"
+              style={{ color: '#818CF8' }}
+            >
               {new Date().toLocaleDateString('en-US', {
-                weekday: 'long', hour: 'numeric', minute: '2-digit'
+                weekday: 'long', hour: 'numeric', minute: '2-digit',
               })}
             </div>
             <div className="text-[22px] font-medium text-white mb-2 leading-tight">
@@ -99,8 +104,10 @@ export default function Dashboard() {
                   : 'evening'}
               , Miguel!
             </div>
-            <div className="text-[13px] leading-relaxed max-w-xs"
-              style={{ color: 'rgba(255,255,255,0.65)' }}>
+            <div
+              className="text-[13px] leading-relaxed max-w-xs"
+              style={{ color: 'rgba(255,255,255,0.65)' }}
+            >
               {hasActivity
                 ? `You've answered ${progress.totalQuestions} question${progress.totalQuestions !== 1 ? 's' : ''} so far. Ready to keep building?`
                 : "Welcome to StudyBuddy! Ask any question and I'll guide you through it step by step."}
@@ -119,7 +126,7 @@ export default function Dashboard() {
           </div>
 
           {/* Continue card */}
-          <div className="w-56 flex-shrink-0 bg-white rounded-2xl p-5 flex flex-col border border-gray-100">
+          <div className="w-full md:w-56 md:flex-shrink-0 bg-white rounded-2xl p-5 flex flex-col border border-gray-100">
             <div className="text-[10px] font-medium uppercase tracking-widest text-gray-400 mb-3">
               {hasActivity ? 'Continue where you left off' : 'Your first session'}
             </div>
@@ -129,8 +136,10 @@ export default function Dashboard() {
                 className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: recentConfig.lightColor }}
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-                  stroke={recentConfig.color} strokeWidth="1.5">
+                <svg
+                  width="16" height="16" viewBox="0 0 16 16"
+                  fill="none" stroke={recentConfig.color} strokeWidth="1.5"
+                >
                   <path d="M3 8h10M8 3v10" />
                   <circle cx="8" cy="8" r="5.5" />
                 </svg>
@@ -139,9 +148,7 @@ export default function Dashboard() {
                 <div className="text-[13px] font-medium text-gray-900">
                   {recentSubject}
                 </div>
-                <div className="text-[11px] text-gray-400">
-                  {recentTopic}
-                </div>
+                <div className="text-[11px] text-gray-400">{recentTopic}</div>
               </div>
             </div>
 
@@ -156,10 +163,7 @@ export default function Dashboard() {
                 <div className="h-1.5 rounded-full bg-gray-100">
                   <div
                     className="h-1.5 rounded-full"
-                    style={{
-                      width: '67%',
-                      backgroundColor: recentConfig.color,
-                    }}
+                    style={{ width: '67%', backgroundColor: recentConfig.color }}
                   />
                 </div>
               </div>
@@ -176,7 +180,6 @@ export default function Dashboard() {
               {hasActivity ? 'Resume session →' : 'Get started →'}
             </button>
           </div>
-
         </div>
 
         {/* Subject cards */}
@@ -185,8 +188,10 @@ export default function Dashboard() {
             <span className="text-[14px] font-medium text-gray-900">
               Choose a subject
             </span>
-            <span className="text-[12px] cursor-pointer"
-              style={{ color: '#4338CA' }}>
+            <span
+              className="text-[12px] cursor-pointer"
+              style={{ color: '#4338CA' }}
+            >
               View all topics →
             </span>
           </div>
@@ -201,6 +206,7 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
+
         {/* How it works explainer */}
         <div
           className="bg-white rounded-2xl p-6"
@@ -223,14 +229,12 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Three steps */}
           <div className="grid grid-cols-3 gap-4 mb-6">
             {[
               {
                 step: '01',
                 title: 'Ask any question',
-                description:
-                  'Type any question from any subject. StudyBuddy automatically detects what you\'re studying — no setup needed.',
+                description: "Type any question from any subject. StudyBuddy automatically detects what you're studying — no setup needed.",
                 color: '#4338CA',
                 bg: '#EEF2FF',
                 icon: (
@@ -243,8 +247,7 @@ export default function Dashboard() {
               {
                 step: '02',
                 title: 'Get guided, not answered',
-                description:
-                  'Instead of giving the answer, StudyBuddy uses a hint ladder — nudges, hints, and explanations that help you think it through yourself.',
+                description: "Instead of giving the answer, StudyBuddy uses a hint ladder — nudges, hints, and explanations that help you think it through yourself.",
                 color: '#D97706',
                 bg: '#FFFBEB',
                 icon: (
@@ -258,8 +261,7 @@ export default function Dashboard() {
               {
                 step: '03',
                 title: 'Master the concept',
-                description:
-                  'When you get it right, StudyBuddy confirms it, marks the concept as mastered, and tracks your progress — so teachers can see real growth.',
+                description: "When you get it right, StudyBuddy confirms it, marks the concept as mastered, and tracks your progress — so teachers can see real growth.",
                 color: '#059669',
                 bg: '#ECFDF5',
                 icon: (
@@ -282,28 +284,23 @@ export default function Dashboard() {
                   >
                     {icon}
                   </div>
-                  <span
-                    className="text-[11px] font-medium"
-                    style={{ color }}
-                  >
+                  <span className="text-[11px] font-medium" style={{ color }}>
                     {step}
                   </span>
                 </div>
-                <div
-                  className="text-[13px] font-medium mb-1.5"
-                  style={{ color }}
-                >
+                <div className="text-[13px] font-medium mb-1.5" style={{ color }}>
                   {title}
                 </div>
-                <div className="text-[12px] leading-relaxed"
-                  style={{ color: `${color}99` }}>
+                <div
+                  className="text-[12px] leading-relaxed"
+                  style={{ color: `${color}99` }}
+                >
                   {description}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Hint ladder visual */}
           <div
             className="rounded-xl p-4"
             style={{ backgroundColor: '#F8F7F4', border: '0.5px solid #e5e7eb' }}
@@ -383,7 +380,6 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {/* Bottom callout */}
             <div
               className="mt-3 px-4 py-2.5 rounded-lg flex items-center gap-3"
               style={{ backgroundColor: 'white', border: '0.5px solid #e5e7eb' }}
@@ -403,12 +399,13 @@ export default function Dashboard() {
               </div>
               <div className="text-[12px] text-gray-500 leading-relaxed">
                 Students control how much help they receive. The goal is always
-                independence — StudyBuddy steps back as soon as the student demonstrates
-                understanding.
+                independence — StudyBuddy steps back as soon as the student
+                demonstrates understanding.
               </div>
             </div>
           </div>
         </div>
+
         {/* Bottom row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -418,24 +415,45 @@ export default function Dashboard() {
               <span className="text-[14px] font-medium text-gray-900">
                 Your progress
               </span>
-              <button
-                onClick={resetProgress}
-                className="text-[11px] text-gray-300 hover:text-red-400 transition-colors"
-              >
-                Reset
-              </button>
+              <div className="flex items-center gap-3">
+                {progress.totalQuestions === 0 && !seeded && (
+                  <button
+                    onClick={() => {
+                      const success = seedDemoData()
+                      if (success) {
+                        setSeeded(true)
+                        window.location.reload()
+                      }
+                    }}
+                    className="text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors"
+                    style={{ backgroundColor: '#EEF2FF', color: '#4338CA' }}
+                  >
+                    Load demo data
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    clearDemoData()
+                    resetProgress()
+                    setSeeded(false)
+                  }}
+                  className="text-[11px] text-gray-300 hover:text-red-400 transition-colors"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2.5">
               {stats.map(({ value, label, change, color }) => (
-                <div key={label}
-                  className="bg-white border border-gray-100 rounded-xl p-4">
+                <div
+                  key={label}
+                  className="bg-white border border-gray-100 rounded-xl p-4"
+                >
                   <div className="text-[24px] font-medium text-gray-900 leading-none mb-1">
                     {value}
                   </div>
                   <div className="text-[12px] text-gray-400 mb-1">{label}</div>
-                  <div className="text-[11px]" style={{ color }}>
-                    {change}
-                  </div>
+                  <div className="text-[11px]" style={{ color }}>{change}</div>
                 </div>
               ))}
             </div>
@@ -447,8 +465,10 @@ export default function Dashboard() {
               <span className="text-[14px] font-medium text-gray-900">
                 Recent activity
               </span>
-              <span className="text-[12px] cursor-pointer"
-                style={{ color: '#4338CA' }}>
+              <span
+                className="text-[12px] cursor-pointer"
+                style={{ color: '#4338CA' }}
+              >
                 See all →
               </span>
             </div>
@@ -468,14 +488,18 @@ export default function Dashboard() {
                     key={i}
                     className="flex items-start gap-3 py-2.5"
                     style={{
-                      borderBottom: i < Math.min(progress.recentActivity.length, 5) - 1
-                        ? '0.5px solid #f3f4f6'
-                        : 'none',
+                      borderBottom:
+                        i < Math.min(progress.recentActivity.length, 5) - 1
+                          ? '0.5px solid #f3f4f6'
+                          : 'none',
                     }}
                   >
                     <div
                       className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
-                      style={{ backgroundColor: SUBJECTS[item.subject]?.color || '#4338CA' }}
+                      style={{
+                        backgroundColor:
+                          SUBJECTS[item.subject]?.color || '#4338CA',
+                      }}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-[13px] font-medium text-gray-900 truncate">
