@@ -31,6 +31,7 @@ export default function TopNav({ progress }) {
             { label: 'My Sessions', path: '/sessions' },
             { label: 'Progress', path: '/progress' },
             { label: 'Teacher View', path: '/teacher' },
+            { label: 'Guide', path: '/landing' },
           ].map(({ label, path }) => (
             <button
               key={path}

@@ -112,6 +112,15 @@ export default function Dashboard() {
                 ? `You've answered ${progress.totalQuestions} question${progress.totalQuestions !== 1 ? 's' : ''} so far. Ready to keep building?`
                 : "Welcome to StudyBuddy! Ask any question and I'll guide you through it step by step."}
             </div>
+            {!hasActivity && (
+              <button
+                onClick={() => navigate('/landing')}
+                className="block text-[12px] mb-3 transition-opacity hover:opacity-80"
+                style={{ color: 'rgba(255,255,255,0.55)' }}
+              >
+                New here? Read the guide first →
+              </button>
+            )}
             <button
               onClick={() => navigate('/chat')}
               className="mt-5 inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"

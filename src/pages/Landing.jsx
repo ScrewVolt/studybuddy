@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { useState } from 'react'
 
 const FEATURES = [
@@ -134,6 +135,7 @@ export default function Landing() {
   const navigate = useNavigate()
   const [activeFeature, setActiveFeature] = useState(0)
   const [activeTutorial, setActiveTutorial] = useState(0)
+  const { user } = useAuth()
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F8F7F4', fontFamily: 'system-ui, sans-serif' }}>
@@ -157,19 +159,31 @@ export default function Landing() {
           <span className="text-[15px] font-medium text-gray-900">StudyBuddy</span>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/auth')}
-            className="text-[13px] text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5"
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => navigate('/auth')}
-            className="text-[13px] font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#4338CA', color: 'white' }}
-          >
-            Get started free
-          </button>
+          {user ? (
+            <button
+              onClick={() => navigate(user ? '/dashboard' : '/auth')}
+              className="text-[13px] font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
+              style={{ backgroundColor: '#4338CA', color: 'white' }}
+            >
+              Back to StudyBuddy →
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/auth')}
+                className="text-[13px] text-gray-500 hover:text-gray-700 transition-colors px-3 py-1.5"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => navigate('/auth')}
+                className="text-[13px] font-medium px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
+                style={{ backgroundColor: '#4338CA', color: 'white' }}
+              >
+                Get started free
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -627,11 +641,11 @@ export default function Landing() {
                 </button>
               ) : (
                 <button
-                  onClick={() => navigate('/auth')}
+                  onClick={() => navigate(user ? '/dashboard' : '/auth')}
                   className="flex items-center gap-1.5 text-[12px] font-medium px-3 py-1.5 rounded-lg transition-opacity hover:opacity-80"
                   style={{ backgroundColor: '#4338CA', color: 'white' }}
                 >
-                  Get started →
+                  {user ? 'Back to app →' : 'Get started →'}
                 </button>
               )}
             </div>
@@ -724,11 +738,11 @@ export default function Landing() {
             Create a free account and ask your first question in under a minute. No credit card, no setup, no shortcuts.
           </p>
           <button
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate(user ? '/dashboard' : '/auth')}
             className="px-8 py-3 rounded-xl text-[14px] font-medium bg-white transition-opacity hover:opacity-90"
             style={{ color: '#4338CA' }}
           >
-            Get started free →
+            {user ? 'Back to StudyBuddy →' : 'Get started free →'}
           </button>
         </div>
       </div>
@@ -754,11 +768,11 @@ export default function Landing() {
           Built for Alamogordo High School · MESA 2026
         </div>
         <button
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate(user ? '/dashboard' : '/auth')}
           className="text-[12px] font-medium"
           style={{ color: '#4338CA' }}
         >
-          Sign in →
+          {user ? 'Dashboard →' : 'Sign in →'}
         </button>
       </div>
 
